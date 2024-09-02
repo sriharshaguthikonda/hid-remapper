@@ -223,6 +223,64 @@ uint64_t get_unique_id() {
     return ret;
 }
 
+// Declare suspended flag
+volatile bool suspended = false;
+
+// Function prototypes
+void resynchronize_clock();
+void reset_hid_state();
+// void power_management_init();
+
+// USB Callbacks
+void tud_suspend_cb(bool remote_wakeup_en) {
+    suspended = true;
+    // Optionally handle LED or power reduction
+}
+
+void tud_resume_cb(void) {
+    suspended = false;
+
+    // Reinitialize USB
+    tud_init();
+
+    // Resynchronize clocks
+    resynchronize_clock();
+
+    // Reset HID state
+    reset_hid_state();
+
+    // Reinitialize GPIO directions if necessary
+    set_gpio_dir();
+}
+
+void resynchronize_clock() {
+    // Implement your clock resynchronization logic here
+    next_print = time_us_64() + 1000000;
+    // Add additional steps as needed
+}
+
+void reset_hid_state() {
+    memset(gpio_out_state, 0, sizeof(gpio_out_state));
+    // Reset other HID-related states if necessary
+}
+
+/*
+void power_management_init() {
+    // Configure power settings to ensure USB remains functional
+    // Example: Disable certain sleep modes or configure wake-up sources
+}
+*/
+
+/*
+##     ##    ###    #### ##    ##
+###   ###   ## ##    ##  ###   ##
+#### ####  ##   ##   ##  ####  ##
+## ### ## ##     ##  ##  ## ## ##
+##     ## #########  ##  ##  ####
+##     ## ##     ##  ##  ##   ###
+##     ## ##     ## #### ##    ##
+*/
+
 int main() {
     my_mutexes_init();
     gpio_pins_init();
@@ -239,10 +297,14 @@ int main() {
     set_mapping_from_config();
     board_init();
     extra_init();
-    tusb_init();
+    tud_init();  // Initialize TinyUSB
     stdio_init_all();
 
+    // Register USB callbacks
     tud_sof_isr_set(sof_handler);
+
+    // Initialize power management
+    power_management_init();
 
     next_print = time_us_64() + 1000000;
 
@@ -272,6 +334,18 @@ int main() {
 #endif
         }
         tud_task();
+
+        // Poll USB status every 500ms
+        static uint64_t last_usb_poll = 0;
+        uint64_t now = time_us_64();
+        if (now - last_usb_poll > 500000) {  // 500ms
+            last_usb_poll = now;
+            if (!tud_mounted()) {
+                tud_init();
+                reset_hid_state();
+            }
+        }
+
         if (boot_protocol_updated) {
             parse_our_descriptor();
             boot_protocol_updated = false;
