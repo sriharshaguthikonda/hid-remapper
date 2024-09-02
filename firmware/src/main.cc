@@ -226,7 +226,7 @@ uint64_t get_unique_id() {
 }
 
 // Declare suspended flag
-volatile bool suspended = false;
+// volatile bool suspended = false;
 
 // Function prototypes
 void resynchronize_clock();
@@ -272,25 +272,20 @@ void power_management_init() {
     // Lower the clock speed to save power
     clock_configure(
         clk_sys,
-        CLOCKS_CLK_SYS_CTRL_AUXSRC_VALUE_CLKSRC_PLL_SYS,  // Use AUXSRC instead of SRC
+        CLOCKS_CLK_SYS_CTRL_AUXSRC_VALUE_CLKSRC_PLL_SYS,  // Use AUXSRC for the main clock
         CLOCKS_CLK_SYS_CTRL_AUXSRC_VALUE_CLKSRC_PLL_SYS,
         12000000,  // Set clock to 12 MHz
         12000000);
 
-    // Set GPIO to a low-power state (example)
-    gpio_set_dir(GPIO_PIN, GPIO_OUT);
-    gpio_put(GPIO_PIN, 0);
-}
+    // Configure the LED pin to disable pull-ups/downs
+    gpio_set_pulls(PICO_DEFAULT_LED_PIN, false, false);
 
-// Configure GPIOs that are used but can be in a low-power state when idle
-gpio_set_pulls(PICO_DEFAULT_LED_PIN, false, false);  // Disable pull-ups/downs on the LED pin
-
-// Enter low-power state if no USB is connected
-if (!tud_mounted()) {
-    // Optionally lower other clocks or enter a sleep mode
-    // For example, enter sleep or dormant mode
-    __wfi();  // Wait for interrupt (could be used in deeper sleep modes)
-}
+    // Enter low-power state if no USB is connected
+    if (!tud_mounted()) {
+        // Optionally lower other clocks or enter a sleep mode
+        // For example, enter sleep or dormant mode
+        __wfi();  // Wait for interrupt (could be used in deeper sleep modes)
+    }
 }
 
 /*
