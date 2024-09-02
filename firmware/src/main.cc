@@ -223,6 +223,87 @@ uint64_t get_unique_id() {
     return ret;
 }
 
+// Declare suspended flag
+volatile bool suspended = false;
+
+// Function prototypes
+void resynchronize_clock();
+void reset_hid_state();
+void power_management_init();
+
+// USB Callbacks
+void tud_suspend_cb(bool remote_wakeup_en) {
+    suspended = true;
+    // Optionally handle LED or power reduction
+}
+
+void tud_resume_cb(void) {
+    suspended = false;
+
+    // Fully reinitialize USB and HID state
+    tud_init(0);        // Reinitialize the USB stack
+    reset_hid_state();  // Reset HID-related states
+
+    // Resynchronize the clock if needed
+    resynchronize_clock();
+
+    // Reinitialize GPIO directions
+    set_gpio_dir();
+
+    // Additional debug or logging to ensure it's being called
+    // For example, blink an LED or send a debug message
+    gpio_put(PICO_DEFAULT_LED_PIN, 1);  // Turn on LED for debugging
+}
+
+void resynchronize_clock() {
+    // Implement your clock resynchronization logic here
+    next_print = time_us_64() + 1000000;
+    // Add additional steps as needed
+}
+
+void reset_hid_state() {
+    memset(gpio_out_state, 0, sizeof(gpio_out_state));
+    // Reset other HID-related states if necessary
+}
+
+void power_management_init() {
+    // Lower the clock speed to reduce power consumption
+    clock_configure(clk_sys,
+        CLOCKS_CLK_SYS_CTRL_SRC_VALUE_CLKSRC_PLL_SYS,
+        CLOCKS_CLK_SYS_CTRL_AUXSRC_VALUE_CLKSRC_PLL_SYS,
+        12000000,  // Set clock to 12 MHz for lower power usage
+        12000000);
+
+    // Set unused GPIO pins to a low-power state (replace with actual unused pin numbers)
+    for (uint i = 0; i < 30; i++) {  // Assuming GPIO 0-29
+        if (!(gpio_valid_pins_mask & (1 << i))) {
+            gpio_init(i);
+            gpio_set_dir(i, GPIO_IN);
+            gpio_disable_pulls(i);  // Disable pull-ups/downs
+        }
+    }
+
+    // Configure GPIOs that are used but can be in a low-power state when idle
+    gpio_set_pulls(PICO_DEFAULT_LED_PIN, false, false);  // Disable pull-ups/downs on the LED pin
+
+    // Enter low-power state if no USB is connected
+    if (!tud_mounted()) {
+        // Optionally lower other clocks or enter a sleep mode
+        // For example, enter sleep or dormant mode
+        __wfi();  // Wait for interrupt (could be used in deeper sleep modes)
+    }
+}
+
+/*
+##     ##    ###    #### ##    ##
+###   ###   ## ##    ##  ###   ##
+#### ####  ##   ##   ##  ####  ##
+## ### ## ##     ##  ##  ## ## ##
+##     ## #########  ##  ##  ####
+##     ## ##     ##  ##  ##   ###
+##     ## ##     ## #### ##    ##
+*/
+
 int main() {
     my_mutexes_init();
     gpio_pins_init();
@@ -239,10 +320,14 @@ int main() {
     set_mapping_from_config();
     board_init();
     extra_init();
-    tusb_init();
+    tud_init(0);  // Initialize TinyUSB
     stdio_init_all();
 
+    // Register USB callbacks
     tud_sof_isr_set(sof_handler);
+
+    // Initialize power management
+    power_management_init();
 
     next_print = time_us_64() + 1000000;
 
@@ -272,6 +357,18 @@ int main() {
 #endif
         }
         tud_task();
+
+        // Poll USB status every 500ms
+        static uint64_t last_usb_poll = 0;
+        uint64_t now = time_us_64();
+        if (now - last_usb_poll > 500000) {  // 500ms
+            last_usb_poll = now;
+            if (!tud_mounted()) {
+                tud_init(0);
+                reset_hid_state();
+            }
+        }
+
         if (boot_protocol_updated) {
             parse_our_descriptor();
             boot_protocol_updated = false;
