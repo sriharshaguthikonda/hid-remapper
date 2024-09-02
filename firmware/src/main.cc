@@ -113,52 +113,6 @@ enum class LedMode {
     BLINK = 2,
 };
 
-// Declare suspended flag
-volatile bool suspended = false;
-
-// Function prototypes
-void resynchronize_clock();
-void reset_hid_state();
-void power_management_init();
-
-// USB Callbacks
-void tud_suspend_cb(bool remote_wakeup_en) {
-    suspended = true;
-    // Optionally handle LED or power reduction
-}
-
-void tud_resume_cb(void) {
-    suspended = false;
-
-    // Reinitialize USB
-    tud_init();
-
-    // Resynchronize clocks
-    resynchronize_clock();
-
-    // Reset HID state
-    reset_hid_state();
-
-    // Reinitialize GPIO directions if necessary
-    set_gpio_dir();
-}
-
-void resynchronize_clock() {
-    // Implement your clock resynchronization logic here
-    next_print = time_us_64() + 1000000;
-    // Add additional steps as needed
-}
-
-void reset_hid_state() {
-    memset(gpio_out_state, 0, sizeof(gpio_out_state));
-    // Reset other HID-related states if necessary
-}
-
-void power_management_init() {
-    // Configure power settings to ensure USB remains functional
-    // Example: Disable certain sleep modes or configure wake-up sources
-}
-
 static atomic_t led_blink_count = ATOMIC_INIT(0);
 static atomic_t led_mode = (atomic_t) ATOMIC_INIT(LedMode::OFF);
 static int led_blinks_left = 0;
@@ -899,6 +853,64 @@ void queue_get_feature_report(uint16_t interface, uint8_t report_id, uint8_t len
 
 void set_gpio_inout_masks(uint32_t in_mask, uint32_t out_mask) {
 }
+
+// Declare suspended flag
+volatile bool suspended = false;
+
+// Function prototypes
+void resynchronize_clock();
+void reset_hid_state();
+// void power_management_init();
+
+// USB Callbacks
+void tud_suspend_cb(bool remote_wakeup_en) {
+    suspended = true;
+    // Optionally handle LED or power reduction
+}
+
+void tud_resume_cb(void) {
+    suspended = false;
+
+    // Reinitialize USB
+    tud_init();
+
+    // Resynchronize clocks
+    resynchronize_clock();
+
+    // Reset HID state
+    reset_hid_state();
+
+    // Reinitialize GPIO directions if necessary
+    set_gpio_dir();
+}
+
+void resynchronize_clock() {
+    // Implement your clock resynchronization logic here
+    next_print = time_us_64() + 1000000;
+    // Add additional steps as needed
+}
+
+void reset_hid_state() {
+    memset(gpio_out_state, 0, sizeof(gpio_out_state));
+    // Reset other HID-related states if necessary
+}
+
+/*
+void power_management_init() {
+    // Configure power settings to ensure USB remains functional
+    // Example: Disable certain sleep modes or configure wake-up sources
+}
+*/
+
+/*
+##     ##    ###    #### ##    ##
+###   ###   ## ##    ##  ###   ##
+#### ####  ##   ##   ##  ####  ##
+## ### ## ##     ##  ##  ## ## ##
+##     ## #########  ##  ##  ####
+##     ## ##     ##  ##  ##   ###
+##     ## ##     ## #### ##    ##
+*/
 
 int main() {
     my_mutexes_init();
