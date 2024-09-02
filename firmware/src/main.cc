@@ -31,7 +31,7 @@
 #include "remapper.h"
 #include "tick.h"
 
-#define PICO_DEFAULT_LED_PIN 25  // Change 25 to the actual pin number for your LED
+// #define PICO_DEFAULT_LED_PIN 25  // Change 25 to the actual pin number for your LED
 
 #define CONFIG_OFFSET_IN_FLASH (PICO_FLASH_SIZE_BYTES - PERSISTED_CONFIG_SIZE)
 #define FLASH_CONFIG_IN_MEMORY (((uint8_t*) XIP_BASE) + CONFIG_OFFSET_IN_FLASH)
@@ -256,7 +256,7 @@ void tud_resume_cb(void) {
 
     // Additional debug or logging to ensure it's being called
     // For example, blink an LED or send a debug message
-    gpio_put(PICO_DEFAULT_LED_PIN, 1);  // Turn on LED for debugging
+    // gpio_put(PICO_DEFAULT_LED_PIN, 1);  // Turn on LED for debugging
 }
 
 void resynchronize_clock() {
@@ -280,7 +280,7 @@ void power_management_init() {
         12000000);
 
     // Configure the LED pin to disable pull-ups/downs
-    gpio_set_pulls(PICO_DEFAULT_LED_PIN, false, false);
+    // gpio_set_pulls(PICO_DEFAULT_LED_PIN, false, false);
 
     // Enter low-power state if no USB is connected
     if (!tud_mounted()) {
