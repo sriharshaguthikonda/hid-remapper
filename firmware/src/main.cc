@@ -341,7 +341,7 @@ int main() {
         if (now - last_usb_poll > 500000) {  // 500ms
             last_usb_poll = now;
             if (!tud_mounted()) {
-                ttud_init(0);
+                tud_init(0);
                 reset_hid_state();
             }
         }
