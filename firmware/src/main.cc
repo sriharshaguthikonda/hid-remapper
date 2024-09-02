@@ -31,6 +31,8 @@
 #include "remapper.h"
 #include "tick.h"
 
+#define PICO_DEFAULT_LED_PIN 25  // Change 25 to the actual pin number for your LED
+
 #define CONFIG_OFFSET_IN_FLASH (PICO_FLASH_SIZE_BYTES - PERSISTED_CONFIG_SIZE)
 #define FLASH_CONFIG_IN_MEMORY (((uint8_t*) XIP_BASE) + CONFIG_OFFSET_IN_FLASH)
 
