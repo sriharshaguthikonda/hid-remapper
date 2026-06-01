@@ -1,0 +1,25 @@
+﻿{
+    "schemaVersion":  "repo-map-artifact-branch/v1",
+    "repo":  "sriharshaguthikonda/hid-remapper",
+    "generatedAt":  "2026-06-01T06:19:56.4349562Z",
+    "source":  "Repo_maps GitHub footprint publish runner",
+    "publishBranch":  "repo-intel-artifacts",
+    "mapCount":  2,
+    "totalBytes":  13722412,
+    "maps":  [
+                 {
+                     "name":  "master",
+                     "ref":  "refs/remotes/origin/master",
+                     "commit":  "a0df78c9056c85c897ebdb764163b4d6f33b5ae7",
+                     "path":  ".repo-intel/branches/remote-origin/master__a0df78c9056c/repo-map-full.json",
+                     "bytes":  6857129
+                 },
+                 {
+                     "name":  "sleep-issue",
+                     "ref":  "refs/remotes/origin/sleep-issue",
+                     "commit":  "349acd794f263ec6bcf66775b92cbfe75f304b51",
+                     "path":  ".repo-intel/branches/remote-origin/sleep-issue__349acd794f26/repo-map-full.json",
+                     "bytes":  6858384
+                 }
+             ]
+}
